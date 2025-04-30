@@ -5,10 +5,6 @@
 #include <numeric>
 #include <exception>
 
-#ifdef _OPENMP
-  #include <omp.h>
-#endif
-
 #ifdef TBB_FOUND
   #include <tbb/parallel_for.h>
   #include <tbb/blocked_range.h>
@@ -37,21 +33,6 @@ int main() {
         if ((f1.get() + f2.get()) != 42)
             throw std::runtime_error("std::async failed");
         std::cout << "[std::async] OK\n";
-
-#ifdef _OPENMP
-        // Test OpenMP
-        std::cout << "[OpenMP] Parallel for loop with 4 threads...\n";
-        int sum = 0;
-        #pragma omp parallel for reduction(+:sum)
-        for (int i = 0; i < 100; ++i) {
-            sum += i;
-        }
-        if (sum != 4950)
-            throw std::runtime_error("OpenMP parallel sum failed");
-        std::cout << "[OpenMP] OK\n";
-#else
-        std::cout << "[OpenMP] Not available.\n";
-#endif
 
 #ifdef TBB_FOUND
         // Test oneTBB

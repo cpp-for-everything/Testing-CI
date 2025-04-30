@@ -23,8 +23,7 @@ jobs:
       - name: Install dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y cmake ninja-build g++ clang \
-            libomp-dev libtbb-dev openmpi-bin libopenmpi-dev
+          sudo apt-get install -y cmake ninja-build g++ clang libtbb-dev
 
       - name: Set compiler path
         run: echo "CXX=${{ matrix.compiler }}" >> $GITHUB_ENV
@@ -107,7 +106,7 @@ jobs:
       - uses: actions/checkout@v4
 
       - name: Install dependencies
-        run: brew install cmake ninja libomp tbb
+        run: brew install cmake ninja tbb
 
       - name: Install GCC
         if: matrix.compiler == 'g++-13'
