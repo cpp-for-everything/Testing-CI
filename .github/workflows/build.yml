@@ -49,7 +49,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        compiler: [msvc, clang++, g++]
+        compiler: [cl, clang++, g++]
         generator: [Ninja, "Visual Studio 17 2022"]
         exclude: 
           - compiler: clang++
@@ -73,30 +73,31 @@ jobs:
         run: choco install mingw -y
 
       - name: Set up MSVC environment
-        if: matrix.compiler == 'msvc'
+        if: matrix.compiler == 'cl'
         uses: ilammy/msvc-dev-cmd@v1
       
-      - name: Set up compiler path
-        shell: bash
-        run:
-          if [ "${{ matrix.compiler }}" = "msvc" ]; then
-              echo "CXX=cl" >> $GITHUB_ENV
-          else
-              echo "CXX=${{ matrix.compiler }}" >> $GITHUB_ENV
-          fi
-
       - name: Configure CMake
         run: >
           cmake -S . -B build 
           -G "${{ matrix.generator }}" 
-          -DCMAKE_CXX_COMPILER="$env:CXX"
+          -DCMAKE_CXX_COMPILER="${{ matrix.compiler }}"
         shell: bash
 
       - name: Build
+        if: matrix.compiler == 'cl'
         run: cmake --build build --config Release
 
       - name: Run verification
+        if: matrix.compiler == 'cl'
         run: ./build/Release/verify_parallel.exe
+
+      - name: Build
+        if: matrix.compiler != 'cl'
+        run: cmake --build build
+
+      - name: Run verification
+        if: matrix.compiler != 'cl'
+        run: ./build/verify_parallel.exe
 
   macos:
     name: macOS Verification
