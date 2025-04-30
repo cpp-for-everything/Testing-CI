@@ -59,40 +59,34 @@ jobs:
 
       - name: Install oneTBB via vcpkg
         run: |
-            git clone https://github.com/microsoft/vcpkg
-            ./vcpkg/bootstrap-vcpkg.bat
-            ./vcpkg/vcpkg install tbb:x64-windows
-            echo "CMAKE_TOOLCHAIN_FILE=$PWD/vcpkg/scripts/buildsystems/vcpkg.cmake" >> $GITHUB_ENV
-        shell: cmd
+          git clone https://github.com/microsoft/vcpkg
+          ./vcpkg/bootstrap-vcpkg.bat
+          ./vcpkg/vcpkg install tbb:x64-windows
+          echo "CMAKE_TOOLCHAIN_FILE=$PWD/vcpkg/scripts/buildsystems/vcpkg.cmake" >> $env:GITHUB_ENV
+        shell: pwsh
+
+      - name: Debug vcpkg TBB install (optional)
+        run: |
+          dir vcpkg/installed/x64-windows/share/tbb
+          dir vcpkg/installed/x64-windows/lib
+        shell: pwsh
 
       - name: Set up MSVC environment
-        if: matrix.compiler == 'cl'
         uses: ilammy/msvc-dev-cmd@v1
-      
+
       - name: Configure CMake
         run: >
-          cmake -S . -B build 
-          -G "${{ matrix.generator }}" 
-          -DCMAKE_CXX_COMPILER="${{ matrix.compiler }}"
-          -DCMAKE_TOOLCHAIN_FILE=${{ env.CMAKE_TOOLCHAIN_FILE }}
+            cmake -S . -B build 
+            -G "${{ matrix.generator }}" 
+            -DCMAKE_CXX_COMPILER="${{ matrix.compiler }}"
+            -DCMAKE_TOOLCHAIN_FILE="${{ env.CMAKE_TOOLCHAIN_FILE }}"
         shell: bash
 
       - name: Build
-        if: matrix.generator == 'Visual Studio 17 2022'
         run: cmake --build build --config Release
 
       - name: Run verification
-        if: matrix.generator == 'Visual Studio 17 2022'
         run: ./build/Release/verify_parallel.exe
-
-      - name: Build
-        if: matrix.generator != 'Visual Studio 17 2022'
-        run: cmake --build build
-
-      - name: Run verification
-        if: matrix.generator != 'Visual Studio 17 2022'
-        run: ./build/verify_parallel.exe
-
   macos:
     name: macOS Verification
     runs-on: macos-latest

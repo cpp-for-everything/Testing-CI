@@ -7,7 +7,5 @@ find_package(TBB CONFIG REQUIRED)
 
 add_executable(verify_parallel main.cpp)
 
-if(TBB_FOUND)
-  target_link_libraries(verify_parallel PRIVATE TBB::tbb)
-  target_compile_definitions(verify_parallel PRIVATE TBB_FOUND)
-endif()
+target_link_libraries(verify_parallel PRIVATE TBB::tbb)
+target_compile_definitions(verify_parallel PRIVATE TBB_FOUND)
