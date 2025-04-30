@@ -77,6 +77,7 @@ jobs:
         uses: ilammy/msvc-dev-cmd@v1
       
       - name: Set up compiler path
+        shell: bash
         run:
           if [ "${{ matrix.compiler }}" = "msvc" ]; then
               echo "CXX=cl" >> $GITHUB_ENV
