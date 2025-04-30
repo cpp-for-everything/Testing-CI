@@ -94,7 +94,7 @@ jobs:
         run: >
           cmake -S . -B build 
           -G "${{ matrix.generator }}" 
-          -DCMAKE_CXX_COMPILER=${{ env.CXX }}
+          -DCMAKE_CXX_COMPILER=$CXX
         shell: bash
 
       - name: Build
