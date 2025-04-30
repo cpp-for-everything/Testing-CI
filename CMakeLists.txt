@@ -3,7 +3,7 @@ project(VerifyParallelLibs CXX)
 
 set(CMAKE_CXX_STANDARD 20)
 
-find_package(TBB)
+find_package(TBB CONFIG REQUIRED)
 
 add_executable(verify_parallel main.cpp)
 
