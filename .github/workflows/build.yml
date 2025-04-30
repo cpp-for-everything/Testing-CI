@@ -1,0 +1,107 @@
+name: Verify Parallelization Libraries for C++
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+
+  linux:
+    name: Linux Verification
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        compiler: [gcc, clang]
+        generator: [Unix Makefiles, Ninja]
+    continue-on-error: true
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y cmake ninja-build g++ clang \
+            libomp-dev libtbb-dev openmpi-bin libopenmpi-dev
+
+      - name: Configure CMake
+        run: >
+          cmake -S . -B build 
+          -G "${{ matrix.generator }}" 
+          -DCMAKE_CXX_COMPILER=${{ matrix.compiler }}
+
+      - name: Build
+        run: cmake --build build --config Release
+
+      - name: Run verification
+        run: ./build/verify_parallel
+        continue-on-error: true
+
+  windows:
+    name: Windows Verification
+    runs-on: windows-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        compiler: [msvc, clang]
+        generator: [Ninja, "Visual Studio 17 2022"]
+    continue-on-error: true
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install dependencies
+        run: choco install cmake ninja -y
+
+      - name: Set up MSVC environment
+        if: matrix.compiler == 'msvc'
+        uses: ilammy/msvc-dev-cmd@v1
+
+      - name: Configure CMake
+        run: >
+          cmake -S . -B build 
+          -G "${{ matrix.generator }}" 
+          -DCMAKE_CXX_COMPILER=${{ matrix.compiler == 'msvc' && 'cl' || matrix.compiler }}
+        shell: bash
+
+      - name: Build
+        run: cmake --build build --config Release
+
+      - name: Run verification
+        run: ./build/Release/verify_parallel.exe
+        continue-on-error: true
+
+  macos:
+    name: macOS Verification
+    runs-on: macos-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        compiler: [clang]
+        generator: [Unix Makefiles, Ninja]
+    continue-on-error: true
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install dependencies
+        run: brew install cmake ninja libomp tbb
+
+      - name: Configure CMake
+        run: >
+          cmake -S . -B build 
+          -G "${{ matrix.generator }}" 
+          -DCMAKE_CXX_COMPILER=clang
+
+      - name: Build
+        run: cmake --build build --config Release
+
+      - name: Run verification
+        run: ./build/verify_parallel
+        continue-on-error: true
