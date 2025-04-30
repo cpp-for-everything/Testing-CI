@@ -75,16 +75,16 @@ jobs:
         if: matrix.compiler == 'mingw'
         run: choco install mingw -y
 
-      - name: Set compiler path
+      - name: Locate MinGW g++
+        if: matrix.compiler == 'mingw'
         run: |
-          if [ "${{ matrix.compiler }}" = "mingw" ]; then
-            echo "CXX=C:/ProgramData/chocolatey/lib/mingw/tools/install/mingw64/bin/g++.exe" >> $GITHUB_ENV
-          elif [ "${{ matrix.compiler }}" = "msvc" ]; then
-            echo "CXX=cl" >> $GITHUB_ENV
-          else
-            echo "CXX=${{ matrix.compiler }}" >> $GITHUB_ENV
-          fi
-        shell: bash
+          MINGW_GXX="$(where g++ | Select-String -Pattern 'mingw64.*g\+\+.exe' | Select-Object -First 1)"
+          if (-not $MINGW_GXX) {
+            Write-Error "g++.exe not found in expected MinGW directories"
+            exit 1
+          }
+          echo "CXX=$MINGW_GXX" >> $env:GITHUB_ENV
+        shell: pwsh
 
       - name: Set up MSVC environment
         if: matrix.compiler == 'msvc'
