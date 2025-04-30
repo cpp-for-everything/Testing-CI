@@ -16,7 +16,6 @@ jobs:
       matrix:
         compiler: [g++, clang++]
         generator: [Unix Makefiles, Ninja]
-    continue-on-error: true
 
     steps:
       - uses: actions/checkout@v4
@@ -43,7 +42,6 @@ jobs:
 
       - name: Run verification
         run: ./build/verify_parallel
-        continue-on-error: true
 
   windows:
     name: Windows Verification
@@ -51,19 +49,18 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        compiler: [msvc, clang++, mingw]
+        compiler: [msvc, clang++, g++]
         generator: [Ninja, "Visual Studio 17 2022"]
         exclude: 
           - compiler: clang++
             generator: "Visual Studio 17 2022"
-          - compiler: mingw
+          - compiler: g++
             generator: "Visual Studio 17 2022"
         include:
           - compiler: clang++
             generator: "MinGW Makefiles"
-          - compiler: mingw
+          - compiler: g++
             generator: "MinGW Makefiles"
-    continue-on-error: true
 
     steps:
       - uses: actions/checkout@v4
@@ -72,29 +69,26 @@ jobs:
         run: choco install cmake ninja -y
 
       - name: Install MinGW
-        if: matrix.compiler == 'mingw'
+        if: matrix.compiler == 'g++'
         run: choco install mingw -y
-
-      - name: Locate MinGW g++
-        if: matrix.compiler == 'mingw'
-        run: |
-          MINGW_GXX="$(where g++ | Select-String -Pattern 'mingw64.*g\+\+.exe' | Select-Object -First 1)"
-          if (-not $MINGW_GXX) {
-            Write-Error "g++.exe not found in expected MinGW directories"
-            exit 1
-          }
-          echo "CXX=$MINGW_GXX" >> $env:GITHUB_ENV
-        shell: pwsh
 
       - name: Set up MSVC environment
         if: matrix.compiler == 'msvc'
         uses: ilammy/msvc-dev-cmd@v1
+      
+      - name: Set up compiler path
+        run:
+          if [ "${{ matrix.compiler }}" = "msvc" ]; then
+              echo "CXX=cl" >> $GITHUB_ENV
+          else
+              echo "CXX=${{ matrix.compiler }}" >> $GITHUB_ENV
+          fi
 
       - name: Configure CMake
         run: >
           cmake -S . -B build 
           -G "${{ matrix.generator }}" 
-          -DCMAKE_CXX_COMPILER=$CXX
+          -DCMAKE_CXX_COMPILER="$env:CXX"
         shell: bash
 
       - name: Build
@@ -102,7 +96,6 @@ jobs:
 
       - name: Run verification
         run: ./build/Release/verify_parallel.exe
-        continue-on-error: true
 
   macos:
     name: macOS Verification
@@ -112,7 +105,6 @@ jobs:
       matrix:
         compiler: [clang++, g++-13]
         generator: [Unix Makefiles, Ninja]
-    continue-on-error: true
 
     steps:
       - uses: actions/checkout@v4
@@ -140,4 +132,3 @@ jobs:
 
       - name: Run verification
         run: ./build/verify_parallel
-        continue-on-error: true
