@@ -39,7 +39,7 @@ int main() {
         std::cout << "[oneTBB] Parallel for over vector...\n";
         const int size = 1000;
         std::vector<int> data(size, 1);
-        int total = 0;
+        std::atomic<int> total = 0;
 
         tbb::parallel_for(
             tbb::blocked_range<int>(0, size),
@@ -47,7 +47,6 @@ int main() {
                 int local_sum = 0;
                 for (int i = r.begin(); i < r.end(); ++i)
                     local_sum += data[i];
-                #pragma omp atomic
                 total += local_sum;
             }
         );
