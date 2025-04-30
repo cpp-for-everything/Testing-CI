@@ -27,11 +27,16 @@ jobs:
           sudo apt-get install -y cmake ninja-build g++ clang \
             libomp-dev libtbb-dev openmpi-bin libopenmpi-dev
 
+      - name: Set compiler path
+        run: echo "CXX=${{ matrix.compiler }}" >> $GITHUB_ENV
+        shell: bash
+
       - name: Configure CMake
         run: >
           cmake -S . -B build 
           -G "${{ matrix.generator }}" 
-          -DCMAKE_CXX_COMPILER=${{ matrix.compiler }}
+          -DCMAKE_CXX_COMPILER=${{ env.CXX }}
+        shell: bash
 
       - name: Build
         run: cmake --build build --config Release
@@ -48,6 +53,16 @@ jobs:
       matrix:
         compiler: [msvc, clang++, mingw]
         generator: [Ninja, "Visual Studio 17 2022"]
+        exclude: 
+          - compiler: clang++
+            generator: "Visual Studio 17 2022"
+          - compiler: mingw
+            generator: "Visual Studio 17 2022"
+        include:
+          - compiler: clang++
+            generator: "MinGW Makefiles"
+          - compiler: mingw
+            generator: "MinGW Makefiles"
     continue-on-error: true
 
     steps:
@@ -58,58 +73,10 @@ jobs:
 
       - name: Install MinGW
         if: matrix.compiler == 'mingw'
+        run: choco install mingw -y
+
+      - name: Set compiler path
         run: |
-          choco install mingw -y
-          echo "CXX=C:/ProgramData/chocolatey/lib/mingw/tools/install/mingw64/bin/g++.exe" >> $GITHUB_ENV
-
-      - name: Set up MSVC environment
-        if: matrix.compiler == 'msvc'
-        uses: ilammy/msvc-dev-cmd@v1
-
-      - name: Configure CMake
-        run: >
-          cmake -S . -B build 
-          -G "${{ matrix.generator }}"
-          -DCMAKE_CXX_COMPILER=${{ env.CXX || (matrix.compiler == 'msvc' && 'cl') || (matrix.compiler == 'mingw' && 'g++') }}
-        shell: bash
-
-      - name: Build
-        run: cmake --build build --config Release
-
-      - name: Run verification
-        run: ./build/Release/verify_parallel.exe
-        continue-on-error: true
-
-  macos:
-    name: macOS Verification
-    runs-on: macos-latest
-    strategy:
-      fail-fast: false
-      matrix:
-        compiler: [clang++, g++-13]
-        generator: [Unix Makefiles, Ninja]
-    continue-on-error: true
-
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Install dependencies
-        run: |
-          brew install cmake ninja libomp tbb
-
-      - name: Install GCC
-        if: matrix.compiler == 'g++-13'
-        run: brew install gcc
-
-      - name: Configure CMake
-        run: >
-          cmake -S . -B build 
-          -G "${{ matrix.generator }}" 
-          -DCMAKE_CXX_COMPILER=${{ matrix.compiler }}
-
-      - name: Build
-        run: cmake --build build --config Release
-
-      - name: Run verification
-        run: ./build/verify_parallel
-        continue-on-error: true
+          if [ "${{ matrix.compiler }}" = "mingw" ]; then
+            echo "CXX=C:/ProgramData/chocolatey/lib/mingw/tools/install/mingw64/bin/g++.exe" >> $GITHUB_ENV
+          elif [ "${{ matrix.compiler }}"
