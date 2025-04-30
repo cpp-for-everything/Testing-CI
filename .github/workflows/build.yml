@@ -84,19 +84,19 @@ jobs:
         shell: bash
 
       - name: Build
-        if: matrix.compiler == 'cl'
+        if: matrix.generator == 'Visual Studio 17 2022'
         run: cmake --build build --config Release
 
       - name: Run verification
-        if: matrix.compiler == 'cl'
+        if: matrix.generator == 'Visual Studio 17 2022'
         run: ./build/Release/verify_parallel.exe
 
       - name: Build
-        if: matrix.compiler != 'cl'
+        if: matrix.generator != 'Visual Studio 17 2022'
         run: cmake --build build
 
       - name: Run verification
-        if: matrix.compiler != 'cl'
+        if: matrix.generator != 'Visual Studio 17 2022'
         run: ./build/verify_parallel.exe
 
   macos:
