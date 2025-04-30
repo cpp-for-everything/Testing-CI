@@ -19,8 +19,7 @@ jobs:
     continue-on-error: true
 
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
       - name: Install dependencies
         run: |
@@ -47,16 +46,21 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        compiler: [msvc, clang++]
+        compiler: [msvc, clang++, mingw]
         generator: [Ninja, "Visual Studio 17 2022"]
     continue-on-error: true
 
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
       - name: Install dependencies
         run: choco install cmake ninja -y
+
+      - name: Install MinGW
+        if: matrix.compiler == 'mingw'
+        run: |
+          choco install mingw -y
+          echo "CXX=C:/ProgramData/chocolatey/lib/mingw/tools/install/mingw64/bin/g++.exe" >> $GITHUB_ENV
 
       - name: Set up MSVC environment
         if: matrix.compiler == 'msvc'
@@ -65,8 +69,8 @@ jobs:
       - name: Configure CMake
         run: >
           cmake -S . -B build 
-          -G "${{ matrix.generator }}" 
-          -DCMAKE_CXX_COMPILER=${{ matrix.compiler == 'msvc' && 'cl' || matrix.compiler }}
+          -G "${{ matrix.generator }}"
+          -DCMAKE_CXX_COMPILER=${{ env.CXX || (matrix.compiler == 'msvc' && 'cl') || matrix.compiler }}
         shell: bash
 
       - name: Build
@@ -82,22 +86,26 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        compiler: [clang++]
+        compiler: [clang++, g++-13]
         generator: [Unix Makefiles, Ninja]
     continue-on-error: true
 
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
       - name: Install dependencies
-        run: brew install cmake ninja libomp tbb
+        run: |
+          brew install cmake ninja libomp tbb
+
+      - name: Install GCC
+        if: matrix.compiler == 'g++-13'
+        run: brew install gcc
 
       - name: Configure CMake
         run: >
           cmake -S . -B build 
           -G "${{ matrix.generator }}" 
-          -DCMAKE_CXX_COMPILER=clang++
+          -DCMAKE_CXX_COMPILER=${{ matrix.compiler }}
 
       - name: Build
         run: cmake --build build --config Release
