@@ -70,7 +70,7 @@ jobs:
         run: >
           cmake -S . -B build 
           -G "${{ matrix.generator }}"
-          -DCMAKE_CXX_COMPILER=${{ env.CXX || (matrix.compiler == 'msvc' && 'cl') || matrix.compiler }}
+          -DCMAKE_CXX_COMPILER=${{ env.CXX || (matrix.compiler == 'msvc' && 'cl') || (matrix.compiler == 'mingw' && 'g++') }}
         shell: bash
 
       - name: Build
